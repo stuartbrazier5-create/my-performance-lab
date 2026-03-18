@@ -4,8 +4,8 @@ import numpy as np
 import plotly.express as px
 
 # --- APP CONFIG ---
-st.set_page_config(page_title="Performance Lab v1.5", layout="wide", page_icon="⚡")
-st.title("🚀 Performance Lab v1.5")
+st.set_page_config(page_title="Performance Lab v1.5.1", layout="wide", page_icon="⚡")
+st.title("🚀 Performance Lab v1.5.1")
 
 # --- DATA INGESTION ---
 st.sidebar.header("🔗 Data Connection")
@@ -30,27 +30,26 @@ if CSV_URL:
             df['Load_2'] = df['TP_TSS'].ewm(span=14).mean()
             df['Strain'] = df['Load_2'] - df['Load_8']
             
-            # HRV Baseline Calculation (Last 7 days vs 60 days)
-            hrv_7d = df['Garmin_HRV'].tail(7).mean()
+            # HRV Baseline Calculation
             hrv_baseline = df['Garmin_HRV'].mean()
 
             # 2. SIDEBAR: READINESS ALERT
             latest = df.iloc[-1]
             st.sidebar.subheader("🛡️ Readiness Status")
             
-            hrv_diff = ((latest['Garmin_HRV'] - hrv_baseline) / hrv_baseline) * 100
+            hrv_diff = ((latest['Garmin_HRV'] - hrv_baseline) / hrv_baseline) * 100 if hrv_baseline > 0 else 0
             
             if hrv_diff < -15:
-                st.sidebar.error(f"READINESS: CRITICAL\nHRV is {int(hrv_diff)}% below baseline. Consider Rest.")
+                st.sidebar.error(f"READINESS: CRITICAL\nHRV is {int(hrv_diff)}% below baseline. Rest!")
             elif hrv_diff < -5:
-                st.sidebar.warning(f"READINESS: STRETCHED\nHRV is {int(hrv_diff)}% below baseline. Stay in Zone 2.")
+                st.sidebar.warning(f"READINESS: STRETCHED\nHRV is {int(hrv_diff)}% below baseline.")
             else:
-                st.sidebar.success(f"READINESS: OPTIMAL\nHRV is {int(hrv_diff)}% vs baseline. All systems GO.")
+                st.sidebar.success(f"READINESS: OPTIMAL\nHRV is +{int(hrv_diff)}% vs baseline.")
 
             st.sidebar.metric("Latest HRV", f"{int(latest['Garmin_HRV'])} ms", delta=f"{int(hrv_diff)}%")
             st.sidebar.metric("Body Battery", f"{int(latest['Garmin_Body_Battery'])}/100")
 
-            # 3. TABS: PERFORMANCE & NUTRITION
+            # 3. TABS
             tab1, tab2, tab3 = st.tabs(["📈 Readiness & Load", "🛡️ Durability", "🍎 Nutrition Strategist"])
             
             with tab1:
@@ -73,4 +72,22 @@ if CSV_URL:
 
             with tab3:
                 st.header("🥤 175km Fueling Strategist")
-                target_time = st.slider("Target Finish Time (Hours)", 5
+                # FIXED SLIDER LINE BELOW
+                target_time = st.slider("Target Finish Time (Hours)", 5.0, 12.0, 7.0, step=0.5)
+                carb_intensity = st.select_slider("Target Intensity", options=["Low (60g/hr)", "Moderate (80g/hr)", "High (100g/hr)", "Elite (120g/hr)"], value="Moderate (80g/hr)")
+                
+                grams_per_hr = int(carb_intensity.split('(')[1].split('g')[0])
+                total_carbs = grams_per_hr * target_time
+                total_bottles = target_time * 1.2 
+                
+                c1, c2, c3 = st.columns(3)
+                c1.metric("Total Carbs", f"{int(total_carbs)}g")
+                c2.metric("Per Hour", f"{grams_per_hr}g")
+                c3.metric("Est. 750ml Bottles", f"{int(total_bottles)}")
+                
+                st.info(f"Target: {int(total_carbs/4)}g every 15 mins. Aim for 800mg Sodium per liter.")
+
+    except Exception as e:
+        st.error(f"⚠️ Error: {e}")
+else:
+    st.info("👋 Paste your CSV link in the sidebar.")
