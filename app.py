@@ -6,13 +6,12 @@ import base64
 from datetime import datetime
 
 # --- APP CONFIG ---
-st.set_page_config(page_title="Performance Lab v1.6.2", layout="wide", page_icon="⚡")
-st.title("🚀 Performance Lab v1.6.2")
+st.set_page_config(page_title="Performance Lab v1.6.3", layout="wide", page_icon="⚡")
+st.title("🚀 Performance Lab v1.6.3")
 
 # --- SIDEBAR: LINKS & COUNTDOWN ---
 st.sidebar.header("🗓️ Race Countdown")
-# Setting April 12, 2026 as a placeholder for your April trip
-race_date = datetime(2026, 4, 12) 
+race_date = datetime(2026, 4, 12) # Target: April 2026 trip
 days_to_race = (race_date - datetime.now()).days
 st.sidebar.metric("Days to Barcelona", f"{days_to_race} Days")
 
@@ -21,8 +20,8 @@ st.sidebar.header("🔗 Data Connection")
 CSV_URL = st.sidebar.text_input("Paste Google Sheet CSV Link here:")
 
 st.sidebar.subheader("🛠️ External Tools")
-# FIXED LINK: This is the verified Vekta CP Calculator URL
 st.sidebar.link_button("Vekta CP Calculator", "https://vekta-cp-calculator.streamlit.app/")
+st.sidebar.link_button("Vekta Zwift Workout Builder", "https://vektasport.streamlit.app/")
 
 if CSV_URL:
     try:
@@ -86,7 +85,8 @@ if CSV_URL:
                 st.columns(3)[2].metric("Est. Bottles", f"{int(t_time * 1.2)}")
 
             with tab4:
-                st.header("🎮 Zwift Workout Architect")
+                st.header("🎮 Internal Workout Architect")
+                st.caption("Use this for simple endurance files. Use the sidebar link for complex Vekta intervals.")
                 d_mins = st.number_input("Duration (Minutes)", 30, 300, 90)
                 t_pct = st.slider("Intensity (% of CP)", 50, 110, 70)
                 zwo = f"""<workout_file><author>Lab</author><name>{d_mins}m @ {t_pct}%</name><workout><Warmup Duration="600" PowerLow="0.45" PowerHigh="0.65"/><SteadyState Duration="{(d_mins-15)*60}" Power="{t_pct/100}"/><Cooldown Duration="300" PowerLow="0.65" PowerHigh="0.45"/></workout></workout_file>"""
