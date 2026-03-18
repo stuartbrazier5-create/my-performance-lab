@@ -4,8 +4,8 @@ import numpy as np
 import plotly.express as px
 
 # --- APP CONFIG ---
-st.set_page_config(page_title="Performance Lab v1.3", layout="wide", page_icon="🚴‍♂️")
-st.title("🚀 Performance Lab v1.3")
+st.set_page_config(page_title="Performance Lab v1.4", layout="wide", page_icon="🚀")
+st.title("🚀 Performance Lab v1.4")
 
 # --- DATA INGESTION ---
 st.sidebar.header("🔗 Data Connection")
@@ -15,32 +15,33 @@ if CSV_URL:
     try:
         # 1. Load Data
         df = pd.read_csv(CSV_URL)
-        df.columns = df.columns.str.strip() # Remove spaces from headers
+        df.columns = df.columns.str.strip() 
         
-        # 2. Smart Date Fix (Handles any format)
+        # 2. Smart Date & Empty Row Cleanup
         df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        df = df.dropna(subset=['Date']) # Remove rows with no date
+        # This line removes any rows where the Date or HRV is missing
+        df = df.dropna(subset=['Date', 'Garmin_HRV']).reset_index(drop=True)
         df = df.sort_values('Date')
 
-        # 3. Handle Empty Metrics (The NaN Fix)
-        # We fill empty cells with 0 so the math doesn't crash
-        df['TP_TSS'] = pd.to_numeric(df['TP_TSS'], errors='coerce').fillna(0)
-        df['Garmin_HRV'] = pd.to_numeric(df['Garmin_HRV'], errors='coerce').fillna(0)
-        df['Garmin_Body_Battery'] = pd.to_numeric(df['Garmin_Body_Battery'], errors='coerce').fillna(0)
+        if not df.empty:
+            # 3. Handle Numerical Metrics
+            df['TP_TSS'] = pd.to_numeric(df['TP_TSS'], errors='coerce').fillna(0)
+            df['Garmin_HRV'] = pd.to_numeric(df['Garmin_HRV'], errors='coerce').fillna(0)
+            df['Garmin_Body_Battery'] = pd.to_numeric(df['Garmin_Body_Battery'], errors='coerce').fillna(0)
 
-        # 4. Vekta-Style Load Modeling
-        if len(df) > 0:
+            # 4. Vekta-Style Load Modeling
             df['Load_8'] = df['TP_TSS'].ewm(span=56).mean()
             df['Load_2'] = df['TP_TSS'].ewm(span=14).mean()
             df['Strain'] = df['Load_2'] - df['Load_8']
             
-            # --- SIDEBAR METRICS ---
+            # --- SIDEBAR METRICS (The Fix) ---
+            # We take the last row that actually passed our 'dropna' filter
             latest = df.iloc[-1]
-            st.sidebar.subheader("Latest Readings")
+            st.sidebar.subheader("Latest Entry")
+            st.sidebar.info(f"Entry Date: {latest['Date'].strftime('%d/%m/%Y')}")
             
-            # Safe display logic to avoid the 'NaN to Integer' error
-            hrv_val = int(latest['Garmin_HRV']) if latest['Garmin_HRV'] > 0 else "N/A"
-            bb_val = int(latest['Garmin_Body_Battery']) if latest['Garmin_Body_Battery'] > 0 else "N/A"
+            hrv_val = int(latest['Garmin_HRV'])
+            bb_val = int(latest['Garmin_Body_Battery'])
             
             st.sidebar.metric("Latest HRV", f"{hrv_val} ms")
             st.sidebar.metric("Body Battery", f"{bb_val}/100")
@@ -68,10 +69,9 @@ if CSV_URL:
                 st.metric(f"Predicted CP @ {kj_work}kJ", f"{int(289 * deg_factor)} W")
                 st.progress(deg_factor)
         else:
-            st.warning("Your sheet is connected, but no data rows were found below the headers.")
+            st.warning("⚠️ No valid data found. Ensure your sheet has dates and HRV values filled in.")
 
     except Exception as e:
         st.error(f"⚠️ Error: {e}")
-        st.info("Check that your headers match: Date, Garmin_HRV, Garmin_Body_Battery, TP_TSS, Feel_Score")
 else:
     st.info("👋 Paste your CSV link in the sidebar to sync your data.")
