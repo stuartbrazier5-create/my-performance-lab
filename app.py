@@ -121,4 +121,4 @@ if CSV_URL:
                 st.markdown(f'<a href="data:file/xml;base64,{b64}" download="Workout.zwo" style="display: block; width: 100%; text-align: center; padding: 15px; background-color: #ff4b4b; color: white; border-radius: 10px; font-weight: bold; text-decoration: none;">📥 DOWNLOAD ZWIFT FILE</a>', unsafe_allow_html=True)
 
     except Exception as e:
-        st.error(f"⚠️ Error: {e}")
+        st.error(f"⚠️ Error: {e}") 
